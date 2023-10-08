@@ -4,3 +4,6 @@ SAE.vcxproj.filters
 SAE.vcxproj.user
 
 x64
+
+.vs
+.git

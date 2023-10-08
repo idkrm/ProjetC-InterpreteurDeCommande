@@ -38,6 +38,7 @@ typedef struct {
 }consultation;
 
 
+
 void inscr(char* input) {
     char nom[LONG_MAX];
     char roles[LONG_MAX];
