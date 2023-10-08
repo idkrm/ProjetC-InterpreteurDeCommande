@@ -4,7 +4,7 @@
 
 //pour les inscriptions
 enum{LONG_MAX = 31};
-typedef struct {
+typedef struct inscription{
 	char nom[LONG_MAX];
 	char roles[LONG_MAX];
     int id;
@@ -16,7 +16,7 @@ int nb_inscrit = 0; //permettra d'afficher l'identifiant entre parenthèses
 
 
 //pour les missions
-typedef struct {
+typedef struct mission{
     int id_miss; 
     char nom[LONG_MAX];
     float remu;
@@ -25,18 +25,6 @@ typedef struct {
 enum { MISSION_MAX = 501 };
 mission m[MISSION_MAX]; //tableau pour regrouper toutes les missions
 int nb_miss = 0; //permettra de préciser la mission publiée est la combien ième (entre parenthèse)
-
-
-//consultation des missions non traitées
-//imbrication des structures mission et inscription dans la structure consultation
-typedef struct {
-    mission id_miss;
-    mission nom[LONG_MAX];
-    mission remu;
-    inscription nom;
-    int s_trait;
-}consultation;
-
 
 
 void inscr(char* input) {
@@ -79,9 +67,6 @@ void inscr(char* input) {
 
 
 
-
-
-
 void miss(char* input) {
     int id = 0;
     char nom[LONG_MAX] = "";
@@ -91,15 +76,15 @@ void miss(char* input) {
     sscanf(input, "%*s %d %s %f", &id, nom, &remu);
 
     //vérifie si l'identifiant existe
-    int id_inscription_valide = 0;
+    int id_existe = 0;
     for (int i = 0; i < nb_inscrit; i++) {
-        if (nb_miss + 1 == inscrit[i].id) {
-            id_inscription_valide = 1;
+        if (nb_miss +1 == inscrit[i].id) {
+            id_existe = 1;
             break;
         }
     }
     //si n'existe pas, msg d'erreur
-    if (id_inscription_valide == 0) {
+    if (id_existe == 0) {
         printf("Identifiant incorrect\n");
         return;
     }
@@ -109,7 +94,6 @@ void miss(char* input) {
         printf("Remuneration incorrecte\n");
         return;
     }
-
 
     else{
         //garde les données dans le tableau "m"
@@ -123,8 +107,65 @@ void miss(char* input) {
 }
 
 
-void consult(char* input) {
 
+void consult(char* input) {
+    int nb_s_trait = 0;
+
+    if (nb_miss > 0) {
+        for (int i = 0; i < nb_miss; ++i) 
+            printf("%d %s %s %.2f (%d)\n", m[i].id_miss, m[i].nom, inscrit[i].nom, m[i].remu, nb_s_trait);
+        }
+
+    else
+        printf("Aucune mission disponible\n");
+    }
+
+
+
+void detail(char* input) {
+    int detail_id = 1, nb_s_trait = 0;
+    int id_inscription_valide = 0;
+
+    sscanf(input, "%*s %d", &detail_id);
+    int id_existe = 0;
+    for (int i = 0; i < nb_inscrit; i++) {
+        if (detail_id == inscrit[i].id) {
+            id_existe = 1;
+            break;
+        }
+    }
+
+    if (id_existe == 0) {
+        printf("Identifiant incorrect\n");
+        return;
+    }
+
+    else {
+        for (int j = 0; j <= detail_id; ++j) {
+            if (j == detail_id) {
+                printf("%d %s %s %.2f (%d)\n", m[j - 1].id_miss, m[j - 1].nom, inscrit[j - 1].nom, m[j - 1].remu, nb_s_trait);
+                printf("detail mission ici\n");
+            }
+            else
+                continue;
+        }
+    }
+}
+
+
+
+void acceptation(char* input) {
+    int id_entreprise, id_mission;
+    sscanf(input, "%*s %d %d", &id_entreprise, &id_mission);
+
+    id_entreprise = inscrit[id_entreprise - 1].id;
+    id_mission = m[id_mission - 1].id_miss;
+
+    if (id_entreprise == "OP")
+        printf("Entreprise incorrecte");
+
+    else
+        printf("Mission enregistree\n");
 }
 
 
@@ -152,19 +193,23 @@ int main() {
 
 
         //vérifiez à quoi correspond "action", exécuter la fonction correspondante 
-        if (strcmp(action, "inscription") == 0) {
+        if (strcmp(action, "inscription") == 0)
             inscr(input);
-            continue;
-        }
 
         else if (strcmp(action, "mission") == 0)
             miss(input);
 
-        else if (strcmp(action, "consultation"))
+        else if (strcmp(action, "consultation") == 0)
             consult(input);
+
+        else if (strcmp(action, "detail") == 0)
+            detail(input);
+
+        else if (strcmp(action, "acceptation") == 0)
+            acceptation(input);
     }
 
-    //si "action" = "exit", quitter le programme
+    //si "action" == "exit", quitter le programme
     if (strcmp(action, "exit") == 0)
         exit();
 }
