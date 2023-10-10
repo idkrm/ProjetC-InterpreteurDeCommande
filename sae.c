@@ -10,6 +10,7 @@ typedef struct inscription{
     int id;
 }inscription;
 
+//variables globales pour pouvoir les utiliser dans n'importe quelle fontion
 enum { MAX_INSCR = 51 };
 inscription inscrit[MAX_INSCR]; //tableau qui permettra de recenser tous les inscrits
 int nb_inscrit = 0; //permettra d'afficher l'identifiant entre parenthèses
@@ -18,13 +19,28 @@ int nb_inscrit = 0; //permettra d'afficher l'identifiant entre parenthèses
 //pour les missions
 typedef struct mission{
     int id_miss; 
-    char nom[LONG_MAX];
+    char nom_miss[LONG_MAX];
     float remu;
+    int auteur;
+    int nb_ss_trait;
 }mission;
 
+//variables globales
 enum { MISSION_MAX = 501 };
 mission m[MISSION_MAX]; //tableau pour regrouper toutes les missions
 int nb_miss = 0; //permettra de préciser la mission publiée est la combien ième (entre parenthèse)
+
+
+typedef struct{
+    int id_miss_atrb;
+    char nom_miss_atrb[LONG_MAX];
+    float remu_atrb;
+    int auteur_atrb;
+    int nb_ss_trait_atrb;
+}mission_atrb;
+
+mission_atrb m_atrb[MISSION_MAX];
+int nb_miss_atrb = 0;
 
 
 void inscr(char* input) {
@@ -97,11 +113,13 @@ void miss(char* input) {
 
     else{
         //garde les données dans le tableau "m"
-        m[nb_miss].id_miss = id;
-        strcpy(m[nb_miss].nom, nom);
-        m[nb_miss].remu = remu;
-
         printf("Mission publiee (%d)\n", nb_miss + 1);
+
+        m[nb_miss].id_miss = nb_miss + 1;
+        strcpy(m[nb_miss].nom_miss, nom);
+        m[nb_miss].remu = remu;
+        m[nb_miss].auteur = id;
+
         ++nb_miss;
     }
 }
@@ -112,18 +130,25 @@ void consult(char* input) {
     int nb_s_trait = 0;
 
     if (nb_miss > 0) {
-        for (int i = 0; i < nb_miss; ++i) 
-            printf("%d %s %s %.2f (%d)\n", m[i].id_miss, m[i].nom, inscrit[i].nom, m[i].remu, nb_s_trait);
+        for (int i = 0; i < nb_miss; ++i) {
+            for (int j = 0; j < nb_inscrit; ++j) {
+                if (m[i].auteur == inscrit[j].id) {
+                    printf("%d %s %s %.2f (%d)\n", m[i].id_miss, m[i].nom_miss, inscrit[j].nom, m[i].remu, nb_s_trait);
+                    
+                }
+            }
         }
+    }
 
-    else
+    else {
         printf("Aucune mission disponible\n");
     }
+}
 
 
 
 void detail(char* input) {
-    int detail_id = 1, nb_s_trait = 0;
+    int detail_id = 1;
     int id_inscription_valide = 0;
 
     sscanf(input, "%*s %d", &detail_id);
@@ -143,7 +168,7 @@ void detail(char* input) {
     else {
         for (int j = 0; j <= detail_id; ++j) {
             if (j == detail_id) {
-                printf("%d %s %s %.2f (%d)\n", m[j - 1].id_miss, m[j - 1].nom, inscrit[j - 1].nom, m[j - 1].remu, nb_s_trait);
+                printf("%d %s %s %.2f (%d)\n", m[j - 1].id_miss, m[j - 1].nom_miss, inscrit[j - 1].nom, m[j - 1].remu, m[j - 1].nb_ss_trait);
                 printf("detail mission ici\n");
             }
             else
@@ -164,8 +189,32 @@ void acceptation(char* input) {
     if (id_entreprise == "OP")
         printf("Entreprise incorrecte");
 
-    else
-        printf("Mission enregistree\n");
+    else {
+        printf("Acceptation enregistree\n");
+
+        int numero_mission = 0;
+        for (int i = 0; i < nb_miss; i++) {
+            if (m[i].id_miss == id_mission) {
+                numero_mission = i;
+                break;
+            }
+        }
+
+        if (numero_mission != 0) {
+            //copie la mission du tableau m au tableau m_atrb
+            strcpy(m_atrb[nb_miss].nom_miss_atrb, m[numero_mission].nom_miss);
+            m_atrb[nb_miss].remu_atrb = m[numero_mission].remu;
+            m_atrb[nb_miss].auteur_atrb = m[numero_mission].auteur;
+            m_atrb[nb_miss].nb_ss_trait_atrb = m[numero_mission].nb_ss_trait;
+
+            nb_miss_atrb++;
+
+            //supprime la mission du tableau m 
+            m[numero_mission] = m[nb_miss - 1];
+            nb_miss--;
+        }
+    
+    }
 }
 
 
