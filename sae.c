@@ -5,14 +5,17 @@
 enum { LONG_MAX = 30 };
 enum { MAX_INSCR = 50 };
 enum { MISSION_MAX = 500 };
+enum { SS_TRAIT_MAX = 5 };
 
-typedef struct inscription {
+//definition d'une structure pour les inscriptions pour une meilleure organisation des données
+typedef struct {
     char nom[LONG_MAX];
     char roles[LONG_MAX];
     int id;
 } inscription;
 
-typedef struct mission {
+//structure pour les missions
+typedef struct {
     int id_miss;
     char nom_miss[LONG_MAX];
     float remu;
@@ -20,6 +23,7 @@ typedef struct mission {
     int nb_ss_trait;
 } mission;
 
+//structure pour les missions attribuées (qui reprend les mêmes variables que la structure mission)
 typedef struct {
     int id_miss_atrb;
     char nom_miss_atrb[LONG_MAX];
@@ -29,6 +33,10 @@ typedef struct {
 } mission_atrb;
 
 
+int exit(char* input) {
+    return 0;
+}
+
 
 void inscr(char* input, inscription* inscrit, int* nb_inscrit) {
     if (*nb_inscrit >= MAX_INSCR) return;
@@ -36,7 +44,8 @@ void inscr(char* input, inscription* inscrit, int* nb_inscrit) {
     char nom[LONG_MAX];
     char roles[LONG_MAX];
 
-    sscanf(input, "%*s %s %s", roles, nom);
+    //on utilise sscanf pour lire la chaîne de caractère "input" obtenu avec la fonction fgets
+    (void)sscanf(input, "%*s %s %s\n", roles, nom); //(void) devant la fonction afin d'éviter l'avertissement "return value ignored : sscanf"
 
     if (strcmp(roles, "OP") != 0 && strcmp(roles, "AG") != 0 && strcmp(roles, "IN") != 0) {
         printf("Role incorrect\n");
@@ -73,7 +82,7 @@ void miss(char* input, mission* m, int* nb_miss, inscription* inscrit, int* nb_i
     char nom[LONG_MAX] = "";
     float remu = 0;
 
-    sscanf(input, "%*s %d %s %f", &id, nom, &remu);
+    (void)sscanf(input, "%*s %d %s %f\n", &id, nom, &remu);
 
     int id_existe = 0;
     for (int i = 0; i < *nb_inscrit; i++) {
@@ -88,7 +97,7 @@ void miss(char* input, mission* m, int* nb_miss, inscription* inscrit, int* nb_i
         return;
     }
 
-    if (remu <= 0) {
+    if (remu < 0) {
         printf("Remuneration incorrecte\n");
         return;
     }
@@ -123,14 +132,15 @@ void consult(mission* m, int* nb_miss, inscription* inscrit, int* nb_inscrit, mi
     }
 }
 
+
 void detail(char* input, mission* m, int* nb_miss, inscription* inscrit, int* nb_inscrit, mission_atrb* m_atrb, int* nb_miss_atrb) {
     int detail_id = 1;
     int id_inscription_valide = 0;
 
-    sscanf(input, "%*s %d", &detail_id);
+    (void)sscanf(input, "%*s %d", &detail_id);
     int id_existe = 0;
     for (int i = 0; i < *nb_inscrit; i++) {
-        if (detail_id == inscrit[i].id) {
+        if (detail_id == m[i].id_miss) {
             id_existe = 1;
             break;
         }
@@ -155,7 +165,7 @@ void detail(char* input, mission* m, int* nb_miss, inscription* inscrit, int* nb
 
 void acceptation(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* nb_miss, mission_atrb* m_atrb, int* nb_miss_atrb) {
     int id_entreprise, id_mission;
-    sscanf(input, "%*s %d %d", &id_entreprise, &id_mission);
+    (void)sscanf(input, "%*s %d %d", &id_entreprise, &id_mission);
 
     id_entreprise = inscrit[id_entreprise - 1].id;
 
@@ -163,56 +173,146 @@ void acceptation(char* input, inscription* inscrit, int* nb_inscrit, mission* m,
         printf("Entreprise incorrecte\n");
     }
     else {
-        printf("Acceptation enregistree\n");
-
-        int numero_mission = 0;
+        int mission_non_atrb = - 1; //définition et initialisation de la variable qui permettra de vérifier si une mission 
+                                    //est présente dans le tableau mission (donc si la mission existe et si elle n'est pas attribuée)
+                                    //initialisé à -1 car sinon la mission 1 ne pourra pas être acceptée
         for (int i = 0; i < *nb_miss; i++) {
             if (m[i].id_miss == id_mission) {
-                numero_mission = i;
+                mission_non_atrb = i;
                 break;
             }
         }
 
-        if (numero_mission != 0) {
-            strcpy(m_atrb[*nb_miss_atrb].nom_miss_atrb, m[numero_mission].nom_miss);
-            m_atrb[*nb_miss_atrb].remu_atrb = m[numero_mission].remu;
-            m_atrb[*nb_miss_atrb].auteur_atrb = m[numero_mission].auteur;
-            m_atrb[*nb_miss_atrb].nb_ss_trait_atrb = m[numero_mission].nb_ss_trait;
+        if (mission_non_atrb != - 1) {
+            printf("Acceptation enregistree\n");
+
+            strcpy(m_atrb[*nb_miss_atrb].nom_miss_atrb, m[mission_non_atrb].nom_miss);
+            m_atrb[*nb_miss_atrb].remu_atrb = m[mission_non_atrb].remu;
+            m_atrb[*nb_miss_atrb].auteur_atrb = m[mission_non_atrb].auteur;
+            m_atrb[*nb_miss_atrb].nb_ss_trait_atrb = m[mission_non_atrb].nb_ss_trait;
 
             (*nb_miss_atrb)++;
 
-            m[numero_mission] = m[*nb_miss - 1];
-            (*nb_miss)--;
+            m[mission_non_atrb] = m[*nb_miss - 1];
         }
+        else
+            printf("Mission incorrecte\n");
+    }
+}
+
+
+void soustraitance(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* nb_miss, mission_atrb* m_atrb, int* nb_miss_atrb) {
+    int id_entreprise = 0, id_mission;
+    float remu;
+
+    (void)sscanf(input, "%*s %d %d %f\n", &id_entreprise, &id_mission, &remu);
+
+    id_entreprise = inscrit[id_entreprise - 1].id;
+    if (strcmp(inscrit[id_entreprise - 1].roles, "AG") != 0) {
+        printf("Entreprise incorrecte\n");
+    }
+
+    int mission_non_atrb = -1;
+    for (int i = 0; i < *nb_miss; i++) {
+        if (m[i].id_miss == id_mission) {
+            mission_non_atrb = i;
+            break;
+        }
+    }
+
+    if ((mission_non_atrb == -1) || (m[mission_non_atrb].nb_ss_trait >= SS_TRAIT_MAX)) 
+        printf("Mission incorrecte\n");
+
+    else if (remu < 0)
+        printf("Remuneration incorrecte\n");
+
+    else {
+        //création de la nouvelle mission
+        mission new_mission;
+
+        //copie des informations de la nouvelle mission
+        new_mission.id_miss = *nb_miss + 1;
+        strcpy(new_mission.nom_miss, m[mission_non_atrb].nom_miss);
+        new_mission.remu = remu;
+        new_mission.auteur = id_entreprise;
+        new_mission.nb_ss_trait = m[mission_non_atrb].nb_ss_trait + 1; 
+
+        //ajouter la nouvelle mission au tableau des missions m
+        m[*nb_miss] = new_mission;
+
+        printf("Sous-traitance enregistree (%d)\n", *nb_miss + 1);
+        ++(*nb_miss);
+
+        //copie de la mission d'origine dans le tableau des missions attribuées (m_atrb)
+        strcpy(m_atrb[*nb_miss_atrb].nom_miss_atrb, m[mission_non_atrb].nom_miss);
+        m_atrb[*nb_miss_atrb].remu_atrb = m[mission_non_atrb].remu;
+        m_atrb[*nb_miss_atrb].auteur_atrb = m[mission_non_atrb].auteur;
+        m_atrb[*nb_miss_atrb].nb_ss_trait_atrb = m[mission_non_atrb].nb_ss_trait;
+
+        (*nb_miss_atrb)++; //incrémentation du nombre de missions dans le tableau des missions attribuées (m_atrb)
+
+        m[mission_non_atrb] = m[*nb_miss - 1];
+    }
+}
+
+
+enum code { ZERO = 0, UN = 1, DEUX = 2, TROIS = 3 };
+void rapport(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* nb_miss, mission_atrb* m_atrb, int* nb_miss_atrb) {
+    int id_mission_atrb, code, id_miss_existe = -1;
+
+    (void)sscanf(input, "%*s %d, %d", &id_mission_atrb, &code);
+
+    for (int i = 0; i < *nb_miss_atrb; ++i)
+        if (id_miss_existe == m_atrb[i].id_miss_atrb) {
+            id_miss_existe = i;
+            break;
+        }
+
+    if (id_miss_existe == -1)
+        printf("Mission incorrecte");
+
+    else if (code > ZERO || code < TROIS)
+        printf("Code de retour incorrect");
+
+    else {
+        printf("Rapport enregistree");
+
     }
 }
 
 
 
 int main() {
+    //attribution de la valeur 100 à INPUT_MAX
+    //définition de la variable "input" (qui va servir à récupérer ce qu'entre l'utilisateur) à la taille maximum de 100 caractères
+    //et de la variable "action" (qui permettra de savoir quelle fonction executer) aussi à la taille maximale de 100 caractères
     enum { INPUT_MAX = 100 };
     char input[INPUT_MAX];
-    char action[INPUT_MAX];
+    char action[INPUT_MAX] = "";
 
+
+    //tableau des personnes inscrites afin de les garder en mémoire 
     inscription inscrit[MAX_INSCR];
-    int nb_inscrit = 0;
+    int nb_inscrit = 0; //nombre de personnes inscritent/présentent dans le tableau
 
+
+    //tableau des différentes missions non attribuées
     mission m[MISSION_MAX];
-    int nb_miss = 0;
+    int nb_miss = 0; //nombre de missions non attribuées dans le tableau
 
+
+    //tableau des missions attribuées
     mission_atrb m_atrb[MISSION_MAX];
-    int nb_miss_atrb = 0;
+    int nb_miss_atrb = 0; //nombre de missions attribuées
 
+
+    //faire une boucle tant que le premier mot saisit par l'utilisateur n'est pas "exit"
     while (strcmp(action, "exit") != 0) {
-        fgets(input, sizeof(input), stdin);
-        size_t input_length = strlen(input);
+        fgets(input, sizeof(input), stdin); //prendre la chaîne de caractère saisie par l'utilisateur
 
-        if (input_length > 0 && input[input_length - 1] == '\n') {
-            input[input_length - 1] = '\0';
-        }
+        (void)sscanf(input, "%s", action); //prendre le premier mot de la chaîne de caractère saisie par l'utilisateur pour la mettre dans la variable "action"
 
-        sscanf(input, "%s", action);
-
+        //si action = à un des mots ci-dessous, appelle la fonction correspondante
         if (strcmp(action, "inscription") == 0)
             inscr(input, inscrit, &nb_inscrit);
 
@@ -227,8 +327,15 @@ int main() {
 
         else if (strcmp(action, "acceptation") == 0)
             acceptation(input, inscrit, &nb_inscrit, m, &nb_miss, m_atrb, &nb_miss_atrb);
+
+        else if (strcmp(action, "sous-traitance") == 0)
+            soustraitance(input, inscrit, &nb_inscrit, m, &nb_miss, m_atrb, &nb_miss_atrb);
+
+        else if (strcmp(action, "rapport") == 0)
+            rapport(input, inscrit, &nb_inscrit, m, &nb_miss, m_atrb, &nb_miss_atrb);
     }
 
+    //si action = "exit", arrête le programme
     if (strcmp(action, "exit") == 0)
-        return 0;
+        exit(input);
 }
