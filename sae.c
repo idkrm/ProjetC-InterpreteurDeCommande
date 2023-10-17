@@ -8,7 +8,7 @@ enum { MISSION_MAX = 500 }; //nombre maximum de missions
 enum { SS_TRAIT_MAX = 5 }; //nombre maximum qu'une mission peut recevoir de sous-traitements
 enum codes { ZERO = 0, UN = 1, DEUX = 2, TROIS = 3 }; //codes des rapports
 
-//definition d'une structure pour les inscriptions pour une meilleure organisation des données
+//definition d'une structure pour les inscriptions
 typedef struct {
     char nom[LONG_MAX];
     char roles[LONG_MAX];
@@ -383,22 +383,28 @@ void rapport(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int
 
 
 void recap(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* nb_miss, mission_atrb* m_atrb, int* nb_miss_atrb, mission_terminee* m_trmn, int* nb_miss_trmn, int* nb_miss_total) {
-    int id_entreprise = - 1;
+    int id_entreprise;
     (void)sscanf(input, "%*s %d", &id_entreprise);
 
-    //vérifie si l'entreprise existe, si oui id_entreprise prend la valeur i-1 sinon 0
+    //vérifie si l'entreprise existe, si oui id_entreprise prend la valeur i sinon 0
+    int id_entreprise_existe = -1;
     for (int i = 0; i < *nb_inscrit; ++i)
         if (id_entreprise == inscrit[i].id) {
-            id_entreprise = i - 1;
+            id_entreprise_existe = i;
+            printf("%d %d ", id_entreprise, inscrit[i].id);
             break;
         }
 
     //si id_entreprise == 0 (donc n'existe pas), msg d'erreur
-    if (id_entreprise == - 1) {
-        printf("Entreprise incorrecte");
+    if (id_entreprise_existe == -1) {
+        printf("Entreprise incorrecte\n");
         return;
     }
     
+    for (int i = 0; i < *nb_miss; ++i) {
+        if (inscrit[i].id == m[i].auteur)
+            printf("%d %s %s %d (%d)", m[i].id_miss, m[i].nom_miss, m[i].auteur, m[i].remu, m[i].nb_ss_trait);
+    }
 
 }
 
