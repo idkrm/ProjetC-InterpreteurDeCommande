@@ -417,11 +417,32 @@ void recap(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* 
         printf("Entreprise incorrecte\n");
         return;
     }
-    
-    for (int j = 0; j < *nb_miss; ++j)
-        if (inscrit[j].id == m[j].auteur)
-            printf("%d %s %s %.2f (%d)\n", m[j].id_miss, m[j].nom_miss, inscrit[j].nom, m[j].remu, m[j].nb_ss_trait);
-    }
+
+    printf("* non attribuees\n");
+    for (int j = 0; j < *nb_miss; ++j) 
+        if (m[j].auteur == id_entreprise) 
+            printf("%d %s %s %.2f (%d)\n", m[j].id_miss, m[j].nom_miss, inscrit[m[j].auteur - 1].nom, m[j].remu, m[j].nb_ss_trait);
+        
+    printf("* attribuees\n");
+    for (int k = 0; k < *nb_miss; ++k) 
+        if(m_atrb[k].auteur_atrb == id_entreprise)
+            printf("%d %s %s %.2f (%d)\n", m_atrb[k].id_miss_atrb, m_atrb[k].nom_miss_atrb, inscrit[m_atrb[k].auteur_atrb - 1].nom, m_atrb[k].remu_atrb, m_atrb[k].nb_ss_trait_atrb);   
+
+    printf("* terminees\n");
+    for (int l = 0; l < *nb_miss; ++l)
+        if (m_trmn[l].auteur_trmn == id_entreprise)
+            printf("%d %s %s %.2f (%d)\n", m_trmn[l].id_miss_trmn, m_trmn[l].nom_miss_trmn, inscrit[m_trmn[l].auteur_trmn - 1].nom, m_trmn[l].remu_trmn, m_trmn[l].nb_ss_trait_trmn);
+
+    /*printf("* a realiser\n");
+    for (int m = 0; m < *nb_miss; ++m) 
+        if (m_atrb[m].auteur_atrb != id_entreprise)
+            printf("%d %s %s %.2f (%d)\n", m_atrb[m].id_miss_atrb, m_atrb[m].nom_miss_atrb, inscrit[m_atrb[m].auteur_atrb - 1].nom, m_atrb[m].remu_atrb, m_atrb[m].nb_ss_trait_atrb);
+
+    printf("* realisees\n");
+    for (int n = 0; n < *nb_miss; ++n)
+        if (m_trmn[n].auteur_trmn != id_entreprise)
+            printf("%d %s %s %.2f (%d)\n", m_trmn[n].id_miss_trmn, m_trmn[n].nom_miss_trmn, inscrit[m_trmn[n].auteur_trmn - 1].nom, m_trmn[n].remu_trmn, m_trmn[n].nb_ss_trait_trmn);*/
+}
 
 
 int main() {
