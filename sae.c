@@ -2,10 +2,14 @@
 #include <string.h>
 #pragma warning(disable : 4996)
 
-enum { LONG_MAX = 30 }; //longueur maximale pour les noms d'entreprises et des missions
-enum { MAX_INSCR = 50 }; //nombre maximum d'inscriptions
-enum { MISSION_MAX = 500 }; //nombre maximum de missions
-enum { SS_TRAIT_MAX = 5 }; //nombre maximum qu'une mission peut recevoir de sous-traitements
+enum {
+    LONG_MAX = 30, //longueur maximale pour les noms d'entreprises et des missions
+    MAX_INSCR = 50, //nombre maximum d'inscriptions
+    MISSION_MAX = 500, //nombre maximum de missions
+    SS_TRAIT_MAX = 5, //nombre maximum qu'une mission peut recevoir de sous-traitements
+    NB_MAX_CODES = 3 //nombre maximum de code rapport qu'une mission peut recevoir
+};
+
 enum codes { ZERO = 0, UN = 1, DEUX = 2, TROIS = 3 }; //codes des rapports
 
 //definition d'une structure pour les inscriptions
@@ -13,6 +17,7 @@ typedef struct {
     char nom[LONG_MAX];
     char roles[LONG_MAX];
     int id;
+
 } inscription;
 
 //structure pour les missions non attribuées
@@ -22,7 +27,7 @@ typedef struct {
     float remu;
     int auteur;
     int nb_ss_trait;
-    char code_rapport;
+    char code_rapport[NB_MAX_CODES];
 } mission;
 
 //structure pour les missions attribuées (qui reprend les mêmes variables que la structure mission)
@@ -32,7 +37,7 @@ typedef struct {
     float remu_atrb;
     int auteur_atrb;
     int nb_ss_trait_atrb;
-    char code_rapport;
+    char code_rapport[NB_MAX_CODES];
 } mission_atrb;
 
 //structure pour les missions terminées
@@ -44,12 +49,12 @@ typedef struct {
     int nb_ss_trait_trmn;
 }mission_terminee;
 
-
+//fonction pour arrêter le programme
 int exit(char* input) {
     return 0;
 }
 
-
+//fonction pour inscrire une entreprise
 void inscr(char* input, inscription* inscrit, int* nb_inscrit) {
     if (*nb_inscrit >= MAX_INSCR) return;
 
@@ -86,7 +91,7 @@ void inscr(char* input, inscription* inscrit, int* nb_inscrit) {
 }
 
 
-
+//fonction pour publier des missions
 void miss(char* input, mission* m, int* nb_miss, inscription* inscrit, int* nb_inscrit, int* nb_miss_total) {
     if (*nb_miss_total >= MISSION_MAX) return;
 
@@ -128,7 +133,7 @@ void miss(char* input, mission* m, int* nb_miss, inscription* inscrit, int* nb_i
     }
 }
 
-
+//fonction pour consulter toutes les missions non attribuées
 void consult(mission* m, int* nb_miss, inscription* inscrit, int* nb_inscrit) {
 
     if (*nb_miss > 0) {
@@ -145,15 +150,15 @@ void consult(mission* m, int* nb_miss, inscription* inscrit, int* nb_inscrit) {
     }
 }
 
-
+//fonction pour consulter les détails d'une mission non attribuée
 void detail(char* input, mission* m, int* nb_miss, inscription* inscrit, int* nb_inscrit, mission_atrb* m_atrb, int* nb_miss_atrb) {
-    int detail_id_miss = 1;
+    int detail_id_miss = 0, id_miss = 0;
     int id_inscription_valide = 0;
     enum codes code;
 
     (void)sscanf(input, "%*s %d", &detail_id_miss);
     int id_miss_existe = 0;
-    for (int i = 0; i < *nb_inscrit; i++) {
+    for (int i = 0; i < *nb_miss; i++) {
         if (detail_id_miss == m[i].id_miss) {
             id_miss_existe = 1;
             break;
@@ -167,21 +172,27 @@ void detail(char* input, mission* m, int* nb_miss, inscription* inscrit, int* nb
     else {
         for (int i = 0; i < *nb_miss; ++i) {
             for (int j = 0; j < *nb_inscrit; ++j) {
-                if (m[i].auteur == inscrit[j].id) {
+                if ((m[i].id_miss == detail_id_miss) && (m[i].auteur == inscrit[j].id)) {
                     printf("%d %s %s %.2f (%d)\n", m[i].id_miss, m[i].nom_miss, inscrit[j].nom, m[i].remu, m[i].nb_ss_trait);
-                    if (m[i].code_rapport == 1)
-                        printf("Local non disponible\n");
-                    else if (m[i].code_rapport == 2)
-                        printf("Pas de signal dans le boitier general\n");
-                    else if (m[i].code_rapport == 3)
-                        printf("Recepteur defectueux\n");
+
                 }
             }
         }
     }
+
+    for (int k = 0; k <= TROIS; ++k) {
+        if (m[id_miss].code_rapport[k] == 1)
+            printf("Local non disponible\n");
+        else if (m[id_miss].code_rapport[k] == 2)
+            printf("Pas de signal dans le boitier general\n");
+        else if (m[id_miss].code_rapport[k] == 3)
+            printf("Recepteur defectueux\n");
+    
+    }
 }
 
 
+//fonction pour qu'une entreprise puisse accepter une mission
 void acceptation(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* nb_miss, mission_atrb* m_atrb, int* nb_miss_atrb) {
     int id_entreprise, id_mission_non_atrb;
     (void)sscanf(input, "%*s %d %d", &id_entreprise, &id_mission_non_atrb);
@@ -221,7 +232,7 @@ void acceptation(char* input, inscription* inscrit, int* nb_inscrit, mission* m,
     }
 }
 
-
+//fonction de sous-traitance des missions
 void soustraitance(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* nb_miss, mission_atrb* m_atrb, int* nb_miss_atrb, int* nb_miss_total) {
     int id_entreprise = 0, id_mission;
     float remu;
@@ -231,6 +242,7 @@ void soustraitance(char* input, inscription* inscrit, int* nb_inscrit, mission* 
     id_entreprise = inscrit[id_entreprise - 1].id;
     if (strcmp(inscrit[id_entreprise - 1].roles, "AG") != 0) {
         printf("Entreprise incorrecte\n");
+        return;
     }
 
     int mission_non_atrb = -1;
@@ -254,6 +266,7 @@ void soustraitance(char* input, inscription* inscrit, int* nb_inscrit, mission* 
     else {
         //création de la nouvelle mission
         mission nouvelle_mission;
+        int pos_code = 0;
 
         //copie des informations de la nouvelle mission
         nouvelle_mission.id_miss = *nb_miss_total + 1;
@@ -261,7 +274,7 @@ void soustraitance(char* input, inscription* inscrit, int* nb_inscrit, mission* 
         nouvelle_mission.remu = remu;
         nouvelle_mission.auteur = id_entreprise;
         nouvelle_mission.nb_ss_trait = m[mission_non_atrb].nb_ss_trait + 1; 
-        nouvelle_mission.code_rapport = m[mission_non_atrb].code_rapport;
+        nouvelle_mission.code_rapport[pos_code] = m[mission_non_atrb].code_rapport;
 
         //ajouter la nouvelle mission au tableau des missions m
         m[*nb_miss] = nouvelle_mission;
@@ -276,7 +289,7 @@ void soustraitance(char* input, inscription* inscrit, int* nb_inscrit, mission* 
         m_atrb[*nb_miss_atrb].remu_atrb = m[mission_non_atrb].remu;
         m_atrb[*nb_miss_atrb].auteur_atrb = m[mission_non_atrb].auteur;
         m_atrb[*nb_miss_atrb].nb_ss_trait_atrb = m[mission_non_atrb].nb_ss_trait;
-        m_atrb[*nb_miss_atrb].code_rapport = m[mission_non_atrb].code_rapport;
+        m_atrb[*nb_miss_atrb].code_rapport[pos_code] = m[mission_non_atrb].code_rapport;
 
         ++(*nb_miss_atrb); //incrémentation du nombre de missions dans le tableau des missions attribuées (m_atrb)
 
@@ -286,7 +299,7 @@ void soustraitance(char* input, inscription* inscrit, int* nb_inscrit, mission* 
 }
 
 
-
+//fonction pour faire le rapport d'une mission
 void rapport(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* nb_miss, mission_atrb* m_atrb, int* nb_miss_atrb, mission_terminee* m_trmn, int* nb_miss_trmn, int* nb_miss_total) {
     int id_mission_atrb, nb_ss_trait = 0;
     enum codes code;
@@ -317,7 +330,7 @@ void rapport(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int
             }
             
 
-    //si le code est inférieur stricte ou supérieur stricte à 0 et 3, msg d'erreur
+    //si le code est inférieur strict ou supérieur strict à 0 et 3, msg d'erreur
     if (code < ZERO || code > TROIS) {
         printf("Code de retour incorrect\n");
         return;
@@ -346,28 +359,33 @@ void rapport(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int
         //création d'une nouvelle mission
         else{
             mission nouvelle_mission;
+            int pos_code = 0;
+
             nouvelle_mission.id_miss = *nb_miss_total + 1;
-            strcpy(nouvelle_mission.nom_miss, m[id_miss_existe].nom_miss); 
-            nouvelle_mission.auteur = m[id_miss_existe].auteur; 
+            strcpy(nouvelle_mission.nom_miss, m_atrb[id_miss_existe].nom_miss_atrb); 
+            nouvelle_mission.auteur = m_atrb[id_miss_existe].auteur_atrb; 
             nouvelle_mission.nb_ss_trait = nb_ss_trait;
 
             if (code == 1) {
-                nouvelle_mission.remu = m[id_miss_existe].remu;
-                nouvelle_mission.code_rapport = code;
+                nouvelle_mission.remu = m_atrb[id_miss_existe].remu_atrb;
+                nouvelle_mission.code_rapport[pos_code] = code;
                 printf("Rapport enregistre (%d)\n", *nb_miss_total + 1);
+                ++pos_code;
             }
 
             else if (code == 2) {
                 //calcule la nouvelle rémunération de la nouvelle mission
-                nouvelle_mission.remu = (m[id_miss_existe].remu) + (majoration2 * (m[id_miss_existe].remu));
-                nouvelle_mission.code_rapport = code;
+                nouvelle_mission.remu = (m_atrb[id_miss_existe].remu_atrb) + (majoration2 * (m_atrb[id_miss_existe].remu_atrb));
+                nouvelle_mission.code_rapport[pos_code] = code;
                 printf("Rapport enregistre (%d)\n", *nb_miss_total + 1);
+                ++pos_code;
             }
 
             else if (code == 3) {
-                nouvelle_mission.remu = (m[id_miss_existe].remu) + (majoration3 * (m[id_miss_existe].remu));
-                nouvelle_mission.code_rapport = code;
+                nouvelle_mission.remu = (m_atrb[id_miss_existe].remu_atrb) + (majoration3 * (m_atrb[id_miss_existe].remu_atrb));
+                nouvelle_mission.code_rapport[pos_code] = code;
                 printf("Rapport enregistre (%d)\n", *nb_miss_total + 1);
+                ++pos_code;
             }
 
             //ajoute la nouvelle mission au tableau des missions non attribuées (m)
@@ -381,32 +399,29 @@ void rapport(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int
 }
 
 
-
+//fonction pour avoir un récapitulatif des entreprises
 void recap(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* nb_miss, mission_atrb* m_atrb, int* nb_miss_atrb, mission_terminee* m_trmn, int* nb_miss_trmn, int* nb_miss_total) {
     int id_entreprise;
     (void)sscanf(input, "%*s %d", &id_entreprise);
 
-    //vérifie si l'entreprise existe, si oui id_entreprise prend la valeur i sinon 0
+    //vérifie si l'entreprise existe, si oui id_entreprise_existe prend la valeur i sinon 0
     int id_entreprise_existe = -1;
     for (int i = 0; i < *nb_inscrit; ++i)
         if (id_entreprise == inscrit[i].id) {
             id_entreprise_existe = i;
-            printf("%d %d ", id_entreprise, inscrit[i].id);
             break;
         }
 
-    //si id_entreprise == 0 (donc n'existe pas), msg d'erreur
+    //si id_entreprise_existe == -1 (donc n'existe pas), msg d'erreur
     if (id_entreprise_existe == -1) {
         printf("Entreprise incorrecte\n");
         return;
     }
     
-    for (int i = 0; i < *nb_miss; ++i) {
-        if (inscrit[i].id == m[i].auteur)
-            printf("%d %s %s %d (%d)", m[i].id_miss, m[i].nom_miss, m[i].auteur, m[i].remu, m[i].nb_ss_trait);
+    for (int j = 0; j < *nb_miss; ++j)
+        if (inscrit[j].id == m[j].auteur)
+            printf("%d %s %s %.2f (%d)\n", m[j].id_miss, m[j].nom_miss, inscrit[j].nom, m[j].remu, m[j].nb_ss_trait);
     }
-
-}
 
 
 int main() {
