@@ -21,34 +21,22 @@ typedef struct {
 
 //structure pour les missions non attribuees
 typedef struct {
-    int id_miss;
+    int id_miss, auteur, nb_ss_trait;
     char nom_miss[LONG_MAX];
     double remu;
-    int auteur;
-    int nb_ss_trait;
     char code_rapport[NB_MAX_CODES];
-    int echec[MAX_INSCR]; //tableau pour stocker les entreprises qui sont responsables des echecs des missions
+    int echec[MAX_INSCR];
 } mission;
 
 //structure pour les missions attribuees (qui reprend les memes variables que la structure mission)
 typedef struct {
-    int id_miss_atrb;
-    char nom_miss_atrb[LONG_MAX];
-    double remu_atrb;
-    int auteur_atrb;
-    int nb_ss_trait_atrb;
-    char code_rapport[NB_MAX_CODES];
+    mission miss_atrb;
     int proprio; //proprietaire de la mission, cad l'id de l'entreprise qui a accepte la mission
-    int echec[MAX_INSCR];
 } mission_atrb;
 
 //structure pour les missions terminees
 typedef struct {
-    int id_miss_trmn;
-    char nom_miss_trmn[LONG_MAX];
-    double remu_trmn;
-    int auteur_trmn;
-    int nb_ss_trait_trmn;
+    mission miss_trmn;
     int proprio;
 }mission_terminee;
 
@@ -70,7 +58,7 @@ void affectation_code_rapport_echec(mission* nouvelle_mission, enum codes code, 
 void remplir(int* tableau, int taille, int valeur_initiale); //remplis les tableaux des codes rapports et des echecs à la valeur "vide" : -1 (qui signifie qu'il n'y a ni code rapport ni echec)
 
 //fonctions qui permettent d'afficher les differents recapitulatifs
-void recap_non_attribuees(int id_entreprise, mission* m, int* nb_miss, inscription* inscrit); 
+void recap_non_attribuees(int id_entreprise, mission* m, int* nb_miss, inscription* inscrit);
 void recap_attribuees(int id_entreprise, mission_atrb* m_atrb, int* nb_miss_atrb, inscription* inscrit);
 void recap_terminees(int id_entreprise, mission_terminee* m_trmn, int* nb_miss_trmn, inscription* inscrit);
 void recap_a_realiser(int id_entreprise, mission_atrb* m_atrb, int* nb_miss_atrb, inscription* inscrit);
@@ -87,8 +75,7 @@ int exit(char* input) {
 void inscr(char* input, inscription* inscrit, int* nb_inscrit) {
     if (*nb_inscrit >= MAX_INSCR) return;
 
-    char nom[LONG_MAX];
-    char roles[LONG_MAX];
+    char nom[LONG_MAX], roles[LONG_MAX];
 
     //on utilise sscanf pour lire la chaine de caractere "input" obtenu avec la fonction fgets
     (void)sscanf(input, "%*s %s %s\n", roles, nom); //(void) devant la fonction afin d'eviter l'avertissement "return value ignored"
@@ -136,7 +123,7 @@ void miss(char* input, mission* m, int* nb_miss, inscription* inscrit, int* nb_i
         return;
     }
 
-    else { 
+    else {
         printf("Mission publiee (%d)\n", *nb_miss_total + 1); //sinon msg de publication
 
         //copie des informations de la mission dans le tableau des missions
@@ -215,7 +202,7 @@ void acceptation(char* input, inscription* inscrit, int* nb_inscrit, mission* m,
     }
 
     else { //sinon verifie si la mission existe
-        int mission_non_atrb = -1; 
+        int mission_non_atrb = -1;
         for (int i = 0; i < *nb_miss; i++) {
             if (m[i].id_miss == id_mission_non_atrb) {
                 mission_non_atrb = i; //si elle existe la variable prend la valeur i
@@ -236,8 +223,8 @@ void acceptation(char* input, inscription* inscrit, int* nb_inscrit, mission* m,
 
             //remplis les codes rapports et echecs par la valeur "vide"
             int vide = -1;
-            remplir(&m_atrb[*nb_miss_atrb].code_rapport, NB_MAX_CODES, vide);
-            remplir(&m_atrb[*nb_miss_atrb].echec, MAX_INSCR, vide);
+            remplir(&m_atrb[*nb_miss_atrb].miss_atrb.code_rapport, NB_MAX_CODES, vide);
+            remplir(&m_atrb[*nb_miss_atrb].miss_atrb.echec, MAX_INSCR, vide);
 
             copie_m_to_atrb(mission_non_atrb, m_atrb, nb_miss_atrb, m, nb_miss); //fonction qui permet de copier les donnees du tableau mission au tableau des missions attribuees
             m_atrb[*nb_miss_atrb].proprio = id_entreprise; //assigne cette mission a l'entreprise correspondante
@@ -326,7 +313,7 @@ void rapport(char* input, mission* m, int* nb_miss, mission_atrb* m_atrb, int* n
     (void)sscanf(input, "%*s %d %d", &id_mission_atrb, &code);
 
     //verifie si la mission attribuee existe
-    int id_miss_existe = mission_atrb_existe(id_mission_atrb, m_atrb, nb_miss_atrb); 
+    int id_miss_existe = mission_atrb_existe(id_mission_atrb, m_atrb, nb_miss_atrb);
 
     //si elle n'existe pas, msg d'erreur
     if (id_miss_existe == -1) {
@@ -336,8 +323,8 @@ void rapport(char* input, mission* m, int* nb_miss, mission_atrb* m_atrb, int* n
 
     //verifie si la mission est bien la derniere de la chaine de sous-traitement
     for (int j = 0; j < *nb_miss_atrb; ++j)
-        if (strcmp(m_atrb[id_miss_existe].nom_miss_atrb, m_atrb[j].nom_miss_atrb) == 0)
-            if (m_atrb[id_miss_existe].nb_ss_trait_atrb < m_atrb[j].nb_ss_trait_atrb) {
+        if (strcmp(m_atrb[id_miss_existe].miss_atrb.nom_miss, m_atrb[j].miss_atrb.nom_miss) == 0)
+            if (m_atrb[id_miss_existe].miss_atrb.nb_ss_trait < m_atrb[j].miss_atrb.nb_ss_trait) {
                 printf("Mission incorrecte\n");
                 return;
             }
@@ -358,63 +345,63 @@ void rapport(char* input, mission* m, int* nb_miss, mission_atrb* m_atrb, int* n
         --(*nb_miss_atrb);
     }
 
-        //code rapport
-        if (code == ZERO)
-            printf("Rapport enregistre\n");
+    //code rapport
+    if (code == ZERO)
+        printf("Rapport enregistre\n");
 
 
-        //creation d'une nouvelle mission
-        else {
-            mission nouvelle_mission;
-            int vide = -1;
+    //creation d'une nouvelle mission
+    else {
+        mission nouvelle_mission;
+        int vide = -1;
 
-            //remplis le tableau des codes rapports par -1 (la valeur qui represente le vide)
-            remplir(&nouvelle_mission.code_rapport, NB_MAX_CODES, vide); 
-            remplir(&nouvelle_mission.echec, MAX_INSCR, vide);
+        //remplis le tableau des codes rapports par -1 (la valeur qui represente le vide)
+        remplir(&nouvelle_mission.code_rapport, NB_MAX_CODES, vide);
+        remplir(&nouvelle_mission.echec, MAX_INSCR, vide);
 
-            //renseigne les informations de la nouvelle mission
-            nouvelle_mission.id_miss = *nb_miss_total + 1;
-            strcpy(nouvelle_mission.nom_miss, m_atrb[id_miss_existe].nom_miss_atrb);
-            nouvelle_mission.auteur = m_atrb[id_miss_existe].auteur_atrb;
-            nouvelle_mission.nb_ss_trait = nb_ss_trait;
+        //renseigne les informations de la nouvelle mission
+        nouvelle_mission.id_miss = *nb_miss_total + 1;
+        strcpy(nouvelle_mission.nom_miss, m_atrb[id_miss_existe].miss_atrb.nom_miss);
+        nouvelle_mission.auteur = m_atrb[id_miss_existe].miss_atrb.auteur;
+        nouvelle_mission.nb_ss_trait = nb_ss_trait;
 
-            //copie des anciens code rapport (s'il y en a)
-            for (int i = 0; i < NB_MAX_CODES; ++i)
-                if ((nouvelle_mission.code_rapport[i] == vide) && ((m_atrb[id_miss_existe].code_rapport[i] == UN) || (m_atrb[id_miss_existe].code_rapport[i] == DEUX) || (m_atrb[id_miss_existe].code_rapport[i] == TROIS)))
-                    nouvelle_mission.code_rapport[i] = m_atrb[id_miss_existe].code_rapport[i];
+        //copie des anciens code rapport (s'il y en a)
+        for (int i = 0; i < NB_MAX_CODES; ++i)
+            if ((nouvelle_mission.code_rapport[i] == vide) && ((m_atrb[id_miss_existe].miss_atrb.code_rapport[i] == UN) || (m_atrb[id_miss_existe].miss_atrb.code_rapport[i] == DEUX) || (m_atrb[id_miss_existe].miss_atrb.code_rapport[i] == TROIS)))
+                nouvelle_mission.code_rapport[i] = m_atrb[id_miss_existe].miss_atrb.code_rapport[i];
 
-            //copie des id des entreprises qui ont realise des echecs (s'il y en a)
-            for (int j = 0; j < MAX_INSCR; ++j)
-                if (nouvelle_mission.echec[j] == vide)
-                    nouvelle_mission.echec[j] = m_atrb[id_miss_existe].echec[j];
+        //copie des id des entreprises qui ont realise des echecs (s'il y en a)
+        for (int j = 0; j < MAX_INSCR; ++j)
+            if (nouvelle_mission.echec[j] == vide)
+                nouvelle_mission.echec[j] = m_atrb[id_miss_existe].miss_atrb.echec[j];
 
 
-            //calcul des nouvelles remunerations et affecte les nouveaux codes rapports et id des entreprises qui realisent des echecs dans les tableaux correspondants
-            if (code == UN) {
-                nouvelle_mission.remu = m_atrb[id_miss_existe].remu_atrb;
-                affectation_code_rapport_echec(&nouvelle_mission, code, m_atrb[id_miss_existe].proprio);
-                printf("Rapport enregistre (%d)\n", *nb_miss_total + 1);
-            }
-
-            if (code == DEUX) {
-                nouvelle_mission.remu = (m_atrb[id_miss_existe].remu_atrb) + (majoration2 * (m_atrb[id_miss_existe].remu_atrb));
-                affectation_code_rapport_echec(&nouvelle_mission, code, m_atrb[id_miss_existe].proprio);
-                printf("Rapport enregistre (%d)\n", *nb_miss_total + 1);
-            }
-
-            if (code == TROIS) {
-                nouvelle_mission.remu = (m_atrb[id_miss_existe].remu_atrb) + (majoration3 * (m_atrb[id_miss_existe].remu_atrb));
-                affectation_code_rapport_echec(&nouvelle_mission, code, m_atrb[id_miss_existe].proprio);
-                printf("Rapport enregistre (%d)\n", *nb_miss_total + 1);
-            }
-
-            //ajoute la nouvelle mission au tableau des missions non attribuees (m)
-            m[*nb_miss] = nouvelle_mission;
-
-            //incrementation du nombre total de missions et du nombre de missions dans le tableau des missions non attribuees (m)
-            ++(*nb_miss_total);
-            ++(*nb_miss);
+        //calcul des nouvelles remunerations et affecte les nouveaux codes rapports et id des entreprises qui realisent des echecs dans les tableaux correspondants
+        if (code == UN) {
+            nouvelle_mission.remu = m_atrb[id_miss_existe].miss_atrb.remu;
+            affectation_code_rapport_echec(&nouvelle_mission, code, m_atrb[id_miss_existe].proprio);
+            printf("Rapport enregistre (%d)\n", *nb_miss_total + 1);
         }
+
+        if (code == DEUX) {
+            nouvelle_mission.remu = (m_atrb[id_miss_existe].miss_atrb.remu) + (majoration2 * (m_atrb[id_miss_existe].miss_atrb.remu));
+            affectation_code_rapport_echec(&nouvelle_mission, code, m_atrb[id_miss_existe].proprio);
+            printf("Rapport enregistre (%d)\n", *nb_miss_total + 1);
+        }
+
+        if (code == TROIS) {
+            nouvelle_mission.remu = (m_atrb[id_miss_existe].miss_atrb.remu) + (majoration3 * (m_atrb[id_miss_existe].miss_atrb.remu));
+            affectation_code_rapport_echec(&nouvelle_mission, code, m_atrb[id_miss_existe].proprio);
+            printf("Rapport enregistre (%d)\n", *nb_miss_total + 1);
+        }
+
+        //ajoute la nouvelle mission au tableau des missions non attribuees (m)
+        m[*nb_miss] = nouvelle_mission;
+
+        //incrementation du nombre total de missions et du nombre de missions dans le tableau des missions non attribuees (m)
+        ++(*nb_miss_total);
+        ++(*nb_miss);
+    }
 }
 
 
@@ -437,9 +424,7 @@ void recap(char* input, inscription* inscrit, int* nb_inscrit, mission* m, int* 
     recap_a_realiser(id_entreprise, m_atrb, nb_miss_atrb, inscrit);
     recap_terminees(id_entreprise, m_trmn, nb_miss_trmn, inscrit);
     recap_realisees(id_entreprise, m_trmn, nb_miss_trmn, inscrit);
-
 }
-
 
 int main() {
     //attribution de la valeur 100 a INPUT_MAX
@@ -448,25 +433,12 @@ int main() {
     enum { INPUT_MAX = 100 };
     char input[INPUT_MAX];
     char action[INPUT_MAX] = "";
-    int nb_miss_total = 0; //nombre de missions au total qui sera aussi l'id des missions 
+    int nb_miss_total = 0, nb_inscrit = 0, nb_miss = 0, nb_miss_atrb = 0, nb_miss_trmn = 0; //nombre d'elements dans les tableaux
 
-    //tableau des personnes inscrites afin de les garder en memoire 
-    inscription inscrit[MAX_INSCR];
-    int nb_inscrit = 0; //nombre de personnes inscritent/presentent dans le tableau
-
-
-    //tableau des differentes missions non attribuees
-    mission m[MISSION_MAX];
-    int nb_miss = 0; //nombre de missions non attribuees dans le tableau
-
-
-    //tableau des missions attribuees
-    mission_atrb m_atrb[MISSION_MAX];
-    int nb_miss_atrb = 0; //nombre de missions attribuees
-
-    mission_terminee m_trmn[MISSION_MAX];
-    int nb_miss_trmn = 0;
-
+    inscription inscrit[MAX_INSCR]; //tableau des entreprises isncrites
+    mission m[MISSION_MAX]; //tableau des missions non attribuees
+    mission_atrb m_atrb[MISSION_MAX]; //tableau des missions attribuees
+    mission_terminee m_trmn[MISSION_MAX]; //tableau des missions terminees
 
     //faire une boucle tant que le premier mot saisit par l'utilisateur n'est pas "exit"
     while (strcmp(action, "exit") != 0) {
@@ -506,8 +478,6 @@ int main() {
 }
 
 
-
-
 //definition des fonctions annexes
 //fonction qui permet de verifier si un nom d'entreprise est deja connu ou non (pour la fonction inscr)
 int nom_connu(const char* nom, const inscription* inscrit, int nb_inscrit) {
@@ -539,7 +509,7 @@ int entreprise_existe(int id, const inscription* inscrit, int* nb_inscrit) {
 //verifie si une mission attribuee existe ou non, si oui renvoie i si non -1
 int mission_atrb_existe(int id, mission_atrb* m_atrb, int* nb_miss_atrb) {
     for (int i = 0; i < *nb_miss_atrb; ++i)
-        if (id == m_atrb[i].id_miss_atrb) {
+        if (id == m_atrb[i].miss_atrb.id_miss) {
             return i;
         }
     return -1;
@@ -549,30 +519,30 @@ int mission_atrb_existe(int id, mission_atrb* m_atrb, int* nb_miss_atrb) {
 void copie_m_to_atrb(int id, mission_atrb* m_atrb, int* nb_miss_atrb, mission* m, int* nb_miss) {
     int vide = -1;
 
-    m_atrb[*nb_miss_atrb].id_miss_atrb = m[id].id_miss;
-    strcpy(m_atrb[*nb_miss_atrb].nom_miss_atrb, m[id].nom_miss);
-    m_atrb[*nb_miss_atrb].remu_atrb = m[id].remu;
-    m_atrb[*nb_miss_atrb].auteur_atrb = m[id].auteur;
-    m_atrb[*nb_miss_atrb].nb_ss_trait_atrb = m[id].nb_ss_trait;
+    m_atrb[*nb_miss_atrb].miss_atrb.id_miss = m[id].id_miss;
+    strcpy(m_atrb[*nb_miss_atrb].miss_atrb.nom_miss, m[id].nom_miss);
+    m_atrb[*nb_miss_atrb].miss_atrb.remu = m[id].remu;
+    m_atrb[*nb_miss_atrb].miss_atrb.auteur = m[id].auteur;
+    m_atrb[*nb_miss_atrb].miss_atrb.nb_ss_trait = m[id].nb_ss_trait;
 
-    for(int i = 0; i < NB_MAX_CODES; ++i)
-        if (m_atrb[*nb_miss_atrb].code_rapport[i] == vide)
-        m_atrb[*nb_miss_atrb].code_rapport[i] = m[id].code_rapport[i];
+    for (int i = 0; i < NB_MAX_CODES; ++i)
+        if (m_atrb[*nb_miss_atrb].miss_atrb.code_rapport[i] == vide)
+            m_atrb[*nb_miss_atrb].miss_atrb.code_rapport[i] = m[id].code_rapport[i];
 
-    for(int j = 0; j < MAX_INSCR; ++j)
-        if ((m_atrb[*nb_miss_atrb].echec[j] == vide) && (m[id].echec != vide))
-            m_atrb[*nb_miss_atrb].echec[j] = m[id].echec[j];
+    for (int j = 0; j < MAX_INSCR; ++j)
+        if ((m_atrb[*nb_miss_atrb].miss_atrb.echec[j] == vide) && (m[id].echec != vide))
+            m_atrb[*nb_miss_atrb].miss_atrb.echec[j] = m[id].echec[j];
 }
 
 //copie des missions attribuees dans le tableau des missions terminees
 void copie_atrb_to_trmn(int id, mission_atrb* m_atrb, int* nb_miss_atrb, mission_terminee* m_trmn, int* nb_miss_trmn) {
     for (int i = 0; i < *nb_miss_atrb; ++i) {
-        if (m_atrb[i].nom_miss_atrb == m_atrb[id].nom_miss_atrb) {
-            m_trmn[*nb_miss_trmn].id_miss_trmn = m_atrb[i].id_miss_atrb;
-            strcpy(m_trmn[*nb_miss_trmn].nom_miss_trmn, m_atrb[i].nom_miss_atrb);
-            m_trmn[*nb_miss_trmn].auteur_trmn = m_atrb[i].auteur_atrb;
-            m_trmn[*nb_miss_trmn].remu_trmn = m_atrb[i].remu_atrb;
-            m_trmn[*nb_miss_trmn].nb_ss_trait_trmn = m_atrb[i].nb_ss_trait_atrb;
+        if (m_atrb[i].miss_atrb.nom_miss == m_atrb[id].miss_atrb.nom_miss) {
+            m_trmn[*nb_miss_trmn].miss_trmn.id_miss = m_atrb[i].miss_atrb.id_miss;
+            strcpy(m_trmn[*nb_miss_trmn].miss_trmn.nom_miss, m_atrb[i].miss_atrb.nom_miss);
+            m_trmn[*nb_miss_trmn].miss_trmn.auteur = m_atrb[i].miss_atrb.auteur;
+            m_trmn[*nb_miss_trmn].miss_trmn.remu = m_atrb[i].miss_atrb.remu;
+            m_trmn[*nb_miss_trmn].miss_trmn.nb_ss_trait = m_atrb[i].miss_atrb.nb_ss_trait;
             m_trmn[*nb_miss_trmn].proprio = m_atrb[i].proprio;
         }
     }
@@ -627,39 +597,39 @@ void recap_non_attribuees(int id_entreprise, mission* m, int* nb_miss, inscripti
 
     if (non_attribuees)
         printf("* non attribuees\n");
-        for (int j = 0; j < *nb_miss; ++j) 
-            if (m[j].auteur == id_entreprise) 
-                printf("%d %s %s %.2f (%d)\n", m[j].id_miss, m[j].nom_miss, inscrit[m[j].auteur - 1].nom, m[j].remu, m[j].nb_ss_trait);
+    for (int j = 0; j < *nb_miss; ++j)
+        if (m[j].auteur == id_entreprise)
+            printf("%d %s %s %.2f (%d)\n", m[j].id_miss, m[j].nom_miss, inscrit[m[j].auteur - 1].nom, m[j].remu, m[j].nb_ss_trait);
 }
 
 void recap_attribuees(int id_entreprise, mission_atrb* m_atrb, int* nb_miss_atrb, inscription* inscrit) {
     int attribuees = 0;
-    for (int k = 0; k < *nb_miss_atrb; ++k) 
-        if (m_atrb[k].auteur_atrb == id_entreprise && m_atrb[k].proprio != id_entreprise) {
+    for (int k = 0; k < *nb_miss_atrb; ++k)
+        if (m_atrb[k].miss_atrb.auteur == id_entreprise && m_atrb[k].proprio != id_entreprise) {
             attribuees = 1;
             break;
         }
 
-    if (attribuees) 
+    if (attribuees)
         printf("* attribuees\n");
-        for (int k = 0; k < *nb_miss_atrb; ++k) 
-            if (m_atrb[k].auteur_atrb == id_entreprise && m_atrb[k].proprio != id_entreprise) 
-                printf("%d %s %s %.2f (%d)\n", m_atrb[k].id_miss_atrb, m_atrb[k].nom_miss_atrb, inscrit[m_atrb[k].auteur_atrb - 1].nom, m_atrb[k].remu_atrb, m_atrb[k].nb_ss_trait_atrb);
+    for (int k = 0; k < *nb_miss_atrb; ++k)
+        if (m_atrb[k].miss_atrb.auteur == id_entreprise && m_atrb[k].proprio != id_entreprise)
+            printf("%d %s %s %.2f (%d)\n", m_atrb[k].miss_atrb.id_miss, m_atrb[k].miss_atrb.nom_miss, inscrit[m_atrb[k].miss_atrb.auteur - 1].nom, m_atrb[k].miss_atrb.remu, m_atrb[k].miss_atrb.nb_ss_trait);
 }
 
 void recap_terminees(int id_entreprise, mission_terminee* m_trmn, int* nb_miss_trmn, inscription* inscrit) {
     int terminees = 0;
-    for (int l = 0; l < *nb_miss_trmn; ++l) 
-        if (m_trmn[l].auteur_trmn == id_entreprise) {
+    for (int l = 0; l < *nb_miss_trmn; ++l)
+        if (m_trmn[l].miss_trmn.auteur == id_entreprise) {
             terminees = 1;
             break;
         }
 
-    if (terminees) 
+    if (terminees)
         printf("* terminees\n");
-        for (int l = 0; l < *nb_miss_trmn; ++l) 
-            if (m_trmn[l].auteur_trmn == id_entreprise) 
-                printf("%d %s %s %.2f (%d)\n", m_trmn[l].id_miss_trmn, m_trmn[l].nom_miss_trmn, inscrit[m_trmn[l].auteur_trmn - 1].nom, m_trmn[l].remu_trmn, m_trmn[l].nb_ss_trait_trmn);
+    for (int l = 0; l < *nb_miss_trmn; ++l)
+        if (m_trmn[l].miss_trmn.auteur == id_entreprise)
+            printf("%d %s %s %.2f (%d)\n", m_trmn[l].miss_trmn.id_miss, m_trmn[l].miss_trmn.nom_miss, inscrit[m_trmn[l].miss_trmn.auteur - 1].nom, m_trmn[l].miss_trmn.remu, m_trmn[l].miss_trmn.nb_ss_trait);
 }
 
 void recap_a_realiser(int id_entreprise, mission_atrb* m_atrb, int* nb_miss_atrb, inscription* inscrit) {
@@ -672,23 +642,23 @@ void recap_a_realiser(int id_entreprise, mission_atrb* m_atrb, int* nb_miss_atrb
 
     if (a_realiser)
         printf("* a realiser\n");
-        for (int o = 0; o < *nb_miss_atrb; ++o) 
-            if (m_atrb[o].proprio == id_entreprise) 
-                printf("%d %s %s %.2f (%d)\n", m_atrb[o].id_miss_atrb, m_atrb[o].nom_miss_atrb, inscrit[m_atrb[o].auteur_atrb - 1].nom, m_atrb[o].remu_atrb, m_atrb[o].nb_ss_trait_atrb);
+    for (int o = 0; o < *nb_miss_atrb; ++o)
+        if (m_atrb[o].proprio == id_entreprise)
+            printf("%d %s %s %.2f (%d)\n", m_atrb[o].miss_atrb.id_miss, m_atrb[o].miss_atrb.nom_miss, inscrit[m_atrb[o].miss_atrb.auteur - 1].nom, m_atrb[o].miss_atrb.remu, m_atrb[o].miss_atrb.nb_ss_trait);
 }
 
 void recap_realisees(int id_entreprise, mission_terminee* m_trmn, int* nb_miss_trmn, inscription* inscrit) {
     int realisees = 0;
-    for (int n = 0; n < *nb_miss_trmn; ++n) 
+    for (int n = 0; n < *nb_miss_trmn; ++n)
         if (m_trmn[n].proprio == id_entreprise) {
             realisees = 1;
             break;
         }
 
-    if (realisees) 
+    if (realisees)
         printf("* realisees\n");
-        for (int n = 0; n < *nb_miss_trmn; ++n) 
-            if (m_trmn[n].proprio == id_entreprise) 
-                printf("%d %s %s %.2f (%d)\n", m_trmn[n].id_miss_trmn, m_trmn[n].nom_miss_trmn, inscrit[m_trmn[n].auteur_trmn - 1].nom, m_trmn[n].remu_trmn, m_trmn[n].nb_ss_trait_trmn);
+    for (int n = 0; n < *nb_miss_trmn; ++n)
+        if (m_trmn[n].proprio == id_entreprise)
+            printf("%d %s %s %.2f (%d)\n", m_trmn[n].miss_trmn.id_miss, m_trmn[n].miss_trmn.nom_miss, inscrit[m_trmn[n].miss_trmn.auteur - 1].nom, m_trmn[n].miss_trmn.remu, m_trmn[n].miss_trmn.nb_ss_trait);
 
 }
